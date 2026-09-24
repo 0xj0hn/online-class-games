@@ -5,6 +5,11 @@ import { useTeamStore } from '@/stores/teamStore'
 import { oddOneOutSeed } from '@/data/seed'
 import { isCorrect } from './logic'
 import { xpFor, streakBonus } from '@/composables/useScore'
+import { fireConfetti, playSfx } from '@/utils/effects'
+import XpToast from '@/components/shared/XpToast.vue'
+import BonusSpin from '@/components/shared/BonusSpin.vue'
+import PowerUpsBar from '@/components/shared/PowerUpsBar.vue'
+import { usePowerUps } from '@/composables/usePowerUps'
 import { useTimer } from '@/composables/useTimer'
 import DuoButton from '@/components/ui/DuoButton.vue'
 import { pickRandomIndexExcluding } from '@/utils/random'
@@ -20,6 +25,10 @@ const cur = computed(()=> list.value[idx.value])
 const chosen = ref<number|null>(null)
 const revealed = ref(false)
 const timer = useTimer(20)
+const power = usePowerUps()
+const toastXp = ref(0)
+const showToast = ref(false)
+const showBonus = ref(false)
 function start(){ chosen.value=null; revealed.value=false; timer.start(20) }
 start()
 function choose(i:number){ if(revealed.value) return; chosen.value=i }
@@ -28,16 +37,25 @@ function submit(){
   revealed.value=true; timer.stop()
   const correct=isCorrect(cur.value, chosen.value)
   if(correct){
-    const base=xpFor(true, timer.remaining.value, timer.total.value, 10)
+    let base=xpFor(true, timer.remaining.value, timer.total.value, 10)
+    if(power.consumeDouble()) base*=2
     const sb=streakBonus(teamStore.getStreak(teamStore.activeId))
     teamStore.addScoreWithStreak(teamStore.activeId, base, sb)
-  } else teamStore.resetStreak(teamStore.activeId)
+    toastXp.value=base+sb; showToast.value=false; setTimeout(()=> showToast.value=true, 10)
+    fireConfetti(); playSfx('correct')
+    if(teamStore.getStreak(teamStore.activeId)>=3) showBonus.value=true
+  } else { teamStore.resetStreak(teamStore.activeId); playSfx('wrong') }
 }
 function next(){ idx.value=pickRandomIndexExcluding(list.value.length, idx.value); teamStore.nextTurn(); start() }
+function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx('bonus'); showBonus.value=false; teamStore.resetStreak(teamStore.activeId) }
+function doFreeze(){ if(power.useFreeze()){ timer.stop(); setTimeout(()=> timer.start(timer.remaining.value), 5000) } }
 </script>
 <template>
   <div class="space-y-4">
     <ScoreBoard :teams="teamStore.teams" :activeId="teamStore.activeId" :streaks="teamStore.streaks" />
+    <PowerUpsBar :doubleUsed="power.doubleUsed.value" :freezeUsed="power.freezeUsed.value" :fiftyUsed="power.fiftyUsed.value" :canFifty="true" @double="power.useDouble()" @freeze="doFreeze" @fifty="()=>{}" />
+    <XpToast :xp="toastXp" :show="showToast" />
+    <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <div class="flex justify-between font-black text-sm">
       <span class="text-duo-text-light">{{ cur.category }} · {{ idx+1 }}/{{ list.length }}</span>
       <span :class="timer.remaining.value<=5 ? 'text-duo-red animate-pulse' : 'text-duo-text-light'">{{ timer.remaining.value }}s</span>

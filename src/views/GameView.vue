@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useTeamStore } from '@/stores/teamStore'
+import DuoButton from '@/components/ui/DuoButton.vue'
+import Podium from '@/components/shared/Podium.vue'
 import SpinWheelGame from '@/games/spin-wheel/SpinWheelGame.vue'
 import QuizRaceGame from '@/games/quiz-race/QuizRaceGame.vue'
 import MemoryMatchGame from '@/games/memory-match/MemoryMatchGame.vue'
@@ -16,6 +19,8 @@ import PictionaryGame from '@/games/pictionary/PictionaryGame.vue'
 import TwentyQuestionsGame from '@/games/twenty-questions/TwentyQuestionsGame.vue'
 
 const route = useRoute()
+const teamStore = useTeamStore()
+const showPodium = ref(false)
 const id = computed(()=> route.params.id as string)
 const map:any = {
   'spin-wheel': SpinWheelGame,
@@ -36,7 +41,11 @@ const Comp = computed(()=> map[id.value])
 </script>
 <template>
   <div>
-    <router-link to="/" class="font-bold text-sm text-duo-blue">← Back to Lobby</router-link>
+    <div class="flex justify-between items-center">
+      <router-link to="/" class="font-bold text-sm text-duo-blue">← Back to Lobby</router-link>
+      <DuoButton size="sm" variant="yellow" @click="showPodium = true">🏆 Podium</DuoButton>
+    </div>
+    <Podium v-if="showPodium" :teams="teamStore.teams" @close="showPodium = false" />
     <h1 class="text-2xl font-black text-duo-text mt-2 capitalize">{{ (id as string).replace(/-/g,' ') }}</h1>
     <div class="mt-4">
       <component :is="Comp" v-if="Comp" />

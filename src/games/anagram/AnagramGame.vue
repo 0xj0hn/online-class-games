@@ -9,11 +9,20 @@ import { useTimer } from '@/composables/useTimer'
 import DuoButton from '@/components/ui/DuoButton.vue'
 import { pickRandomIndexExcluding } from '@/utils/random'
 import DuoCard from '@/components/ui/DuoCard.vue'
+import { fireConfetti, playSfx } from '@/utils/effects'
+import { usePowerUps } from '@/composables/usePowerUps'
+import PowerUpsBar from '@/components/shared/PowerUpsBar.vue'
+import XpToast from '@/components/shared/XpToast.vue'
+import BonusSpin from '@/components/shared/BonusSpin.vue'
 import ScoreBoard from '@/components/shared/ScoreBoard.vue'
 import ProgressBar from '@/components/shared/ProgressBar.vue'
 
 const packStore = usePackStore()
 const teamStore = useTeamStore()
+const power = usePowerUps()
+const toastXp = ref(0)
+const showToast = ref(false)
+const showBonus = ref(false)
 const list = computed(()=> (packStore.overrides['anagram'] as any) ?? anagramSeed)
 const idx = ref(Math.floor(Math.random()* (list.value.length || 1)))
 const cur = computed(()=> list.value[idx.value])
@@ -30,6 +39,9 @@ function submit(){
   if(ok.value){ const base=xpFor(true, timer.remaining.value, timer.total.value, 10); teamStore.addScoreWithStreak(teamStore.activeId, base, streakBonus(teamStore.getStreak(teamStore.activeId))) } else teamStore.resetStreak(teamStore.activeId)
 }
 function next(){ idx.value=pickRandomIndexExcluding(list.value.length, idx.value); teamStore.nextTurn(); start() }
+
+function doFreeze(){ if(power.useFreeze()){ timer.stop(); setTimeout(()=> timer.start(timer.remaining.value), 5000) } }
+function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx('bonus'); showBonus.value=false; teamStore.resetStreak(teamStore.activeId) }
 </script>
 <template>
   <div class="space-y-4">

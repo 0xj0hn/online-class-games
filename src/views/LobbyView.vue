@@ -2,9 +2,11 @@
 import DuoCard from '@/components/ui/DuoCard.vue'
 import DuoButton from '@/components/ui/DuoButton.vue'
 import TeamSelector from '@/components/shared/TeamSelector.vue'
+import Podium from '@/components/shared/Podium.vue'
 import { useTeamStore } from '@/stores/teamStore'
 import { ref } from 'vue'
 const teamStore = useTeamStore()
+const showPodium = ref(false)
 
 const games = [
   { id:'spin-wheel', title:'Spin & Speak', desc:'Spin the wheel → speak 30s', icon:'🎡', color:'#FF9600', xp:'10 XP' },
@@ -28,10 +30,12 @@ const games = [
       <div class="flex-1">
         <h1 class="text-3xl font-black text-duo-text leading-tight">Duo-Style Games for BBB</h1>
         <p class="text-duo-text-light font-bold mt-2">Teacher shares screen · Students answer via mic/chat · You award XP</p>
-        <div class="flex gap-2 mt-4">
+        <div class="flex gap-2 mt-4 flex-wrap">
           <router-link to="/admin"><DuoButton variant="outline" size="sm">⚙️ Manage Packs</DuoButton></router-link>
+          <DuoButton variant="yellow" size="sm" @click="showPodium = true">🏆 Podium</DuoButton>
           <span class="text-xs font-bold text-duo-text-light self-center">A1-B1 · Ages 11-14 · 3-6 teams</span>
         </div>
+        <Podium v-if="showPodium" :teams="teamStore.teams" @close="showPodium = false" />
       </div>
       <div class="w-full md:w-80">
         <h3 class="font-black text-sm text-duo-text-light uppercase tracking-wide mb-2">Teams (teacher edits)</h3>

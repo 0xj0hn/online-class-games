@@ -7,10 +7,19 @@ import { makeState, guess, displayWord, isWon, isLost } from './logic'
 import DuoButton from '@/components/ui/DuoButton.vue'
 import { pickRandomIndexExcluding } from '@/utils/random'
 import DuoCard from '@/components/ui/DuoCard.vue'
+import { fireConfetti, playSfx } from '@/utils/effects'
+import { usePowerUps } from '@/composables/usePowerUps'
+import PowerUpsBar from '@/components/shared/PowerUpsBar.vue'
+import XpToast from '@/components/shared/XpToast.vue'
+import BonusSpin from '@/components/shared/BonusSpin.vue'
 import ScoreBoard from '@/components/shared/ScoreBoard.vue'
 
 const packStore = usePackStore()
 const teamStore = useTeamStore()
+const power = usePowerUps()
+const toastXp = ref(0)
+const showToast = ref(false)
+const showBonus = ref(false)
 const items = computed(()=> (packStore.overrides['hangman'] as any) ?? hangmanSeed)
 const idx = ref(Math.floor(Math.random()* (items.value.length || 1)))
 const state = ref(makeState(items.value[idx.value].word))
@@ -23,6 +32,8 @@ function next(){ idx.value=pickRandomIndexExcluding(items.value.length, idx.valu
 // award on win
 import { watch } from 'vue'
 watch(won, v=>{ if(v) teamStore.addScore(teamStore.activeId, 15)})
+function doFreeze(){}
+function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx('bonus'); showBonus.value=false; teamStore.resetStreak(teamStore.activeId) }
 </script>
 <template>
   <div class="space-y-4">

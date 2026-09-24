@@ -6,9 +6,18 @@ import { topicsSeed } from '@/data/seed'
 import { spinTopics } from './logic'
 import DuoButton from '@/components/ui/DuoButton.vue'
 import DuoCard from '@/components/ui/DuoCard.vue'
+import { fireConfetti, playSfx } from '@/utils/effects'
+import { usePowerUps } from '@/composables/usePowerUps'
+import PowerUpsBar from '@/components/shared/PowerUpsBar.vue'
+import XpToast from '@/components/shared/XpToast.vue'
+import BonusSpin from '@/components/shared/BonusSpin.vue'
 import ScoreBoard from '@/components/shared/ScoreBoard.vue'
 
 const teamStore = useTeamStore()
+const power = usePowerUps()
+const toastXp = ref(0)
+const showToast = ref(false)
+const showBonus = ref(false)
 const packStore = usePackStore()
 const topics = computed(()=> (packStore.overrides['topics'] as any) ?? topicsSeed)
 const current = ref<any>(null)
@@ -28,6 +37,8 @@ function award(){
   teamStore.nextTurn()
   current.value=null
 }
+function doFreeze(){}
+function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx('bonus'); showBonus.value=false; teamStore.resetStreak(teamStore.activeId) }
 </script>
 <template>
   <div class="space-y-4">

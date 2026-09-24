@@ -6,11 +6,20 @@ import { pairsSeed } from '@/data/seed'
 import { makeCards, isMatch } from './logic'
 import { shuffle } from '@/utils/random'
 import DuoButton from '@/components/ui/DuoButton.vue'
+import { fireConfetti, playSfx } from '@/utils/effects'
+import { usePowerUps } from '@/composables/usePowerUps'
+import PowerUpsBar from '@/components/shared/PowerUpsBar.vue'
+import XpToast from '@/components/shared/XpToast.vue'
+import BonusSpin from '@/components/shared/BonusSpin.vue'
 import ScoreBoard from '@/components/shared/ScoreBoard.vue'
 import type { Card } from './logic'
 
 const packStore = usePackStore()
 const teamStore = useTeamStore()
+const power = usePowerUps()
+const toastXp = ref(0)
+const showToast = ref(false)
+const showBonus = ref(false)
 const pairs = computed(()=> { const pool=(packStore.overrides['pairs'] as any) ?? pairsSeed as any; const shuffled=shuffle(pool as any); return shuffled.slice(0, Math.min(6, pool.length)) as any })
 const cards = ref<Card[]>(makeCards(pairs.value as any))
 const flipped = ref<Card[]>([])
@@ -26,7 +35,7 @@ function flip(c: Card){
     if(isMatch(a,b)){
       matched.value.add(a.uid); matched.value.add(b.uid)
       if(matched.value.size===cards.value.length){
-        teamStore.addScore(teamStore.activeId, 20 - Math.min(10, moves.value))
+        fireConfetti(); playSfx('correct'); teamStore.addScore(teamStore.activeId, 20 - Math.min(10, moves.value))
       }
       flipped.value=[]
     } else {
@@ -35,6 +44,8 @@ function flip(c: Card){
   }
 }
 function reset(){ const pool=(packStore.overrides['pairs'] as any) ?? pairsSeed as any; const shuffled=shuffle(pool as any); const sel=shuffled.slice(0, Math.min(6, pool.length)) as any; cards.value=makeCards(sel as any); flipped.value=[]; matched.value=new Set(); moves.value=0 }
+function doFreeze(){}
+function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx('bonus'); showBonus.value=false; teamStore.resetStreak(teamStore.activeId) }
 </script>
 <template>
   <div class="space-y-4">

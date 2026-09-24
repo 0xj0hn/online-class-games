@@ -6,10 +6,19 @@ import { bingoSeed } from '@/data/seed'
 import { makeBoard, checkBingo, drawNext } from './logic'
 import DuoButton from '@/components/ui/DuoButton.vue'
 import DuoCard from '@/components/ui/DuoCard.vue'
+import { fireConfetti, playSfx } from '@/utils/effects'
+import { usePowerUps } from '@/composables/usePowerUps'
+import PowerUpsBar from '@/components/shared/PowerUpsBar.vue'
+import XpToast from '@/components/shared/XpToast.vue'
+import BonusSpin from '@/components/shared/BonusSpin.vue'
 import ScoreBoard from '@/components/shared/ScoreBoard.vue'
 
 const packStore = usePackStore()
 const teamStore = useTeamStore()
+const power = usePowerUps()
+const toastXp = ref(0)
+const showToast = ref(false)
+const showBonus = ref(false)
 const pool = computed(()=> (packStore.overrides['bingo'] as any) ?? bingoSeed)
 const board = ref(makeBoard(pool.value,3))
 const drawn = ref<Set<string>>(new Set())
@@ -25,6 +34,8 @@ function draw(){
 function startAuto(){ if(auto.value) return; auto.value=true; iid=setInterval(draw, 3000) }
 function stopAuto(){ auto.value=false; if(iid) clearInterval(iid) }
 function reset(){ board.value=makeBoard(pool.value,3); drawn.value=new Set(); current.value=null; stopAuto() }
+function doFreeze(){}
+function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx('bonus'); showBonus.value=false; teamStore.resetStreak(teamStore.activeId) }
 </script>
 <template>
   <div class="space-y-4">

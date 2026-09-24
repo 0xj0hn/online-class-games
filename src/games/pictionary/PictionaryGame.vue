@@ -8,11 +8,20 @@ import { xpForPictionary } from './logic'
 import DuoButton from '@/components/ui/DuoButton.vue'
 import { pickRandomIndexExcluding } from '@/utils/random'
 import DuoCard from '@/components/ui/DuoCard.vue'
+import { fireConfetti, playSfx } from '@/utils/effects'
+import { usePowerUps } from '@/composables/usePowerUps'
+import PowerUpsBar from '@/components/shared/PowerUpsBar.vue'
+import XpToast from '@/components/shared/XpToast.vue'
+import BonusSpin from '@/components/shared/BonusSpin.vue'
 import ScoreBoard from '@/components/shared/ScoreBoard.vue'
 import ProgressBar from '@/components/shared/ProgressBar.vue'
 
 const packStore = usePackStore()
 const teamStore = useTeamStore()
+const power = usePowerUps()
+const toastXp = ref(0)
+const showToast = ref(false)
+const showBonus = ref(false)
 const list = computed(()=> (packStore.overrides['pictionary'] as any) ?? pictionarySeed)
 const idx = ref(Math.floor(Math.random()* (list.value.length || 1)))
 const cur = computed(()=> list.value[idx.value])
@@ -29,8 +38,15 @@ function pos(e:any){ const r=canvasRef.value!.getBoundingClientRect(); const x=(
 function down(e:any){ drawing=true; const {x,y}=pos(e); ctx!.beginPath(); ctx!.moveTo(x,y) }
 function move(e:any){ if(!drawing) return; const {x,y}=pos(e); ctx!.lineTo(x,y); ctx!.strokeStyle=color; ctx!.stroke() }
 function up(){ drawing=false }
-function correct(){ const xp=xpForPictionary(timer.remaining.value, timer.total.value); timer.stop(); teamStore.addScoreWithStreak(teamStore.activeId, xp, 0); reveal.value=true }
+function correct(){ const xp=xpForPictionary(timer.remaining.value, timer.total.value); timer.stop(); teamStore.addScoreWithStreak(teamStore.activeId, xp, 0);
+    toastXp.value=xp; showToast.value=false; setTimeout(()=> showToast.value=true, 10)
+    fireConfetti(); playSfx('correct')
+    if(teamStore.getStreak(teamStore.activeId)>=3) showBonus.value=true
+    reveal.value=true }
 function next(){ idx.value=pickRandomIndexExcluding(list.value.length, idx.value); start() }
+
+function doFreeze(){ if(power.useFreeze()){ timer.stop(); setTimeout(()=> timer.start(timer.remaining.value), 5000) } }
+function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx('bonus'); showBonus.value=false; teamStore.resetStreak(teamStore.activeId) }
 </script>
 <template>
   <div class="space-y-4">

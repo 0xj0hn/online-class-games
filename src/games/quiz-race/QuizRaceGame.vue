@@ -9,8 +9,13 @@ import { pickRandomIndexExcluding } from '@/utils/random'
 import DuoCard from '@/components/ui/DuoCard.vue'
 import ScoreBoard from '@/components/shared/ScoreBoard.vue'
 import ProgressBar from '@/components/shared/ProgressBar.vue'
+import PowerUpsBar from '@/components/shared/PowerUpsBar.vue'
+import XpToast from '@/components/shared/XpToast.vue'
+import BonusSpin from '@/components/shared/BonusSpin.vue'
 import { useTimer } from '@/composables/useTimer'
 import { xpFor, streakBonus } from '@/composables/useScore'
+import { usePowerUps } from '@/composables/usePowerUps'
+import { fireConfetti, playSfx } from '@/utils/effects'
 
 const packStore = usePackStore()
 const teamStore = useTeamStore()
@@ -20,22 +25,46 @@ const chosen = ref<number | null>(null)
 const revealed = ref(false)
 const timer = useTimer(15)
 const cur = computed(()=> quiz.value[idx.value])
+const hiddenOptions = ref<Set<number>>(new Set())
+const toastXp = ref(0)
+const showToast = ref(false)
+const showBonus = ref(false)
+const power = usePowerUps()
 
-function startQ(){ chosen.value=null; revealed.value=false; timer.start(15) }
+function startQ(){ chosen.value=null; revealed.value=false; hiddenOptions.value=new Set(); timer.start(15) }
 function choose(i:number){ if(revealed.value) return; chosen.value=i }
 function submit(){
   if(chosen.value===null) return
   revealed.value=true; timer.stop()
   const correct = checkAnswer(cur.value, chosen.value)
-  if(correct){ const base=xpFor(true, timer.remaining.value, timer.total.value, 15); teamStore.addScoreWithStreak(teamStore.activeId, base, streakBonus(teamStore.getStreak(teamStore.activeId))) } else teamStore.resetStreak(teamStore.activeId)
+  if(correct){
+    let base=xpFor(true, timer.remaining.value, timer.total.value, 15)
+    if(power.consumeDouble()) base*=2
+    const sb=streakBonus(teamStore.getStreak(teamStore.activeId))
+    teamStore.addScoreWithStreak(teamStore.activeId, base, sb)
+    toastXp.value=base+sb; showToast.value=false; setTimeout(()=> showToast.value=true, 10)
+    fireConfetti(); playSfx('correct')
+    if(teamStore.getStreak(teamStore.activeId)>=3) showBonus.value=true
+  } else { teamStore.resetStreak(teamStore.activeId); playSfx('wrong') }
 }
 function next(){ idx.value=pickRandomIndexExcluding(quiz.value.length, idx.value); teamStore.nextTurn(); startQ() }
+function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx('bonus'); showBonus.value=false; teamStore.resetStreak(teamStore.activeId) }
+function doFreeze(){ if(power.useFreeze()){ timer.stop(); setTimeout(()=> timer.start(timer.remaining.value), 5000) } }
+function doFifty(){
+  if(!power.useFifty()) return
+  const wrong = cur.value.options.map((_:any,i:number)=>i).filter((i:number)=> i!==cur.value.answerIndex)
+  const toHide = wrong.sort(()=> Math.random()-0.5).slice(0,2)
+  hiddenOptions.value=new Set(toHide)
+}
 
 startQ()
 </script>
 <template>
   <div class="space-y-4">
     <ScoreBoard :teams="teamStore.teams" :activeId="teamStore.activeId" :streaks="teamStore.streaks" />
+    <PowerUpsBar :doubleUsed="power.doubleUsed.value" :freezeUsed="power.freezeUsed.value" :fiftyUsed="power.fiftyUsed.value" :canFifty="true" @double="power.useDouble()" @freeze="doFreeze" @fifty="doFifty" />
+    <XpToast :xp="toastXp" :show="showToast" />
+    <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <div class="flex justify-between items-center">
       <span class="font-black text-sm text-duo-text-light">Q {{ idx+1 }} / {{ quiz.length }} · {{ cur.category }}</span>
       <span class="font-black text-duo-red text-sm">{{ timer.remaining.value }}s</span>
@@ -46,6 +75,7 @@ startQ()
       <div class="grid gap-2 mt-4">
         <button
           v-for="(o,i) in cur.options" :key="i"
+          v-show="!hiddenOptions.has(Number(i))"
           @click="choose(Number(i))"
           :class="['text-left font-bold rounded-2xl border-2 p-4 transition-all', chosen===Number(i) ? 'border-duo-blue bg-blue-50' : 'border-duo-gray bg-white hover:border-duo-gray-dark', revealed && Number(i)===cur.answerIndex ? '!border-duo-green !bg-green-50' : '', revealed && chosen===Number(i) && Number(i)!==cur.answerIndex ? '!border-duo-red !bg-red-50' : '']"
           :data-testid="`opt-${i}`"

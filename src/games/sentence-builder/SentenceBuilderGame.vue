@@ -7,10 +7,19 @@ import { checkOrder, shuffleWords } from './logic'
 import DuoButton from '@/components/ui/DuoButton.vue'
 import { pickRandomIndexExcluding } from '@/utils/random'
 import DuoCard from '@/components/ui/DuoCard.vue'
+import { fireConfetti, playSfx } from '@/utils/effects'
+import { usePowerUps } from '@/composables/usePowerUps'
+import PowerUpsBar from '@/components/shared/PowerUpsBar.vue'
+import XpToast from '@/components/shared/XpToast.vue'
+import BonusSpin from '@/components/shared/BonusSpin.vue'
 import ScoreBoard from '@/components/shared/ScoreBoard.vue'
 
 const packStore = usePackStore()
 const teamStore = useTeamStore()
+const power = usePowerUps()
+const toastXp = ref(0)
+const showToast = ref(false)
+const showBonus = ref(false)
 const sentences = computed(()=> (packStore.overrides['sentences'] as any) ?? sentencesSeed)
 const idx = ref(Math.floor(Math.random()* (sentences.value.length || 1)))
 const cur = computed(()=> sentences.value[idx.value])
@@ -31,6 +40,8 @@ function check(){
   if(ok) teamStore.addScore(teamStore.activeId, 15)
 }
 function next(){ idx.value=pickRandomIndexExcluding(sentences.value.length, idx.value); init() }
+function doFreeze(){}
+function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx('bonus'); showBonus.value=false; teamStore.resetStreak(teamStore.activeId) }
 </script>
 <template>
   <div class="space-y-4">
