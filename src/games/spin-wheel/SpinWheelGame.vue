@@ -33,7 +33,7 @@ function spin(){
 }
 function award(){
   if(!current.value) return
-  teamStore.addScore(teamStore.activeId, 10)
+  let base=10; if(power.consumeDouble()) base*=2; teamStore.addScoreWithStreak(teamStore.activeId, base, 0); toastXp.value=base; showToast.value=false; setTimeout(()=>showToast.value=true,10); fireConfetti(); playSfx('correct'); if(teamStore.getStreak(teamStore.activeId)>=3) showBonus.value=true
   teamStore.nextTurn()
   current.value=null
 }
@@ -43,6 +43,9 @@ function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx
 <template>
   <div class="space-y-4">
     <ScoreBoard :teams="teamStore.teams" :activeId="teamStore.activeId" :streaks="teamStore.streaks" />
+    <PowerUpsBar :doubleUsed="power.doubleUsed.value" :freezeUsed="power.freezeUsed.value" :fiftyUsed="power.fiftyUsed.value" :canFifty="false" @double="power.useDouble()" @freeze="doFreeze" @fifty="()=>{}" />
+    <XpToast :xp="toastXp" :show="showToast" />
+    <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <DuoCard class="text-center py-8">
       <div class="mx-auto w-52 h-52 rounded-full border-[8px] border-duo-yellow bg-duo-yellow/20 flex items-center justify-center text-6xl transition-transform duration-700" :style="{transform: `rotate(${angle}deg)`}" data-testid="wheel">🎡</div>
       <div class="mt-6 flex justify-center gap-3">

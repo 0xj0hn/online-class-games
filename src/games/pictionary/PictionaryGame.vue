@@ -51,6 +51,9 @@ function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx
 <template>
   <div class="space-y-4">
     <ScoreBoard :teams="teamStore.teams" :activeId="teamStore.activeId" :streaks="teamStore.streaks" />
+    <PowerUpsBar :doubleUsed="power.doubleUsed.value" :freezeUsed="power.freezeUsed.value" :fiftyUsed="power.fiftyUsed.value" :canFifty="false" @double="power.useDouble()" @freeze="doFreeze" @fifty="()=>{}" />
+    <XpToast :xp="toastXp" :show="showToast" />
+    <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <div class="flex justify-between font-black text-sm"><span>Pictionary · {{ cur.category }} · {{ idx+1 }}/{{ list.length }}</span><span>{{ timer.remaining.value }}s</span></div>
     <ProgressBar :value="timer.remaining.value" :max="timer.total.value" color="#FFC800" />
     <div class="grid md:grid-cols-3 gap-4">

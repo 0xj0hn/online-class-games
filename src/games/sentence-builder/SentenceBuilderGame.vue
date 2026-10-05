@@ -37,7 +37,7 @@ function toPool(w:string, i:number){ answer.value.splice(i,1); pool.value.push(w
 function check(){
   const ok=checkOrder(cur.value.sentence, answer.value)
   result.value=ok
-  if(ok) teamStore.addScore(teamStore.activeId, 15)
+  if(ok){ let base=15; if(power.consumeDouble()) base*=2; teamStore.addScoreWithStreak(teamStore.activeId, base, 0); toastXp.value=base; showToast.value=false; setTimeout(()=>showToast.value=true,10); fireConfetti(); playSfx('correct'); if(teamStore.getStreak(teamStore.activeId)>=3) showBonus.value=true } else { teamStore.resetStreak(teamStore.activeId); playSfx('wrong') }
 }
 function next(){ idx.value=pickRandomIndexExcluding(sentences.value.length, idx.value); init() }
 function doFreeze(){}
@@ -46,6 +46,9 @@ function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx
 <template>
   <div class="space-y-4">
     <ScoreBoard :teams="teamStore.teams" :activeId="teamStore.activeId" :streaks="teamStore.streaks" />
+    <PowerUpsBar :doubleUsed="power.doubleUsed.value" :freezeUsed="power.freezeUsed.value" :fiftyUsed="power.fiftyUsed.value" :canFifty="false" @double="power.useDouble()" @freeze="doFreeze" @fifty="()=>{}" />
+    <XpToast :xp="toastXp" :show="showToast" />
+    <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <DuoCard>
       <p class="text-xs font-black tracking-widest uppercase text-duo-text-light">Build the sentence · {{ idx+1 }}/{{ sentences.length }}</p>
       <div class="min-h-20 border-2 border-dashed border-duo-gray rounded-2xl p-3 flex flex-wrap gap-2 mt-3 bg-duo-gray-light">

@@ -29,7 +29,7 @@ const won = computed(()=> checkBingo(board.value, drawn.value))
 function draw(){
   const n=drawNext(pool.value, drawn.value)
   if(n){ drawn.value.add(n.id); current.value=n }
-  if(won.value){ stopAuto(); teamStore.addScoreWithStreak(teamStore.activeId, 20, 0) }
+  if(won.value){ stopAuto(); let base=20; if(power.consumeDouble()) base*=2; teamStore.addScoreWithStreak(teamStore.activeId, base, 0); toastXp.value=base; showToast.value=false; setTimeout(()=>showToast.value=true,10); fireConfetti(); playSfx('correct'); if(teamStore.getStreak(teamStore.activeId)>=3) showBonus.value=true }
 }
 function startAuto(){ if(auto.value) return; auto.value=true; iid=setInterval(draw, 3000) }
 function stopAuto(){ auto.value=false; if(iid) clearInterval(iid) }
@@ -40,6 +40,9 @@ function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx
 <template>
   <div class="space-y-4">
     <ScoreBoard :teams="teamStore.teams" :activeId="teamStore.activeId" :streaks="teamStore.streaks" />
+    <PowerUpsBar :doubleUsed="power.doubleUsed.value" :freezeUsed="power.freezeUsed.value" :fiftyUsed="power.fiftyUsed.value" :canFifty="false" @double="power.useDouble()" @freeze="doFreeze" @fifty="()=>{}" />
+    <XpToast :xp="toastXp" :show="showToast" />
+    <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <DuoCard class="text-center">
       <p class="font-black text-duo-text">BINGO — Teacher draws words, students shout!</p>
       <p v-if="current" class="mt-2 text-xl font-black text-duo-blue">Drawn: {{ current.word }} <span class="text-sm text-duo-text-light">— {{ current.definition }}</span></p>

@@ -35,7 +35,7 @@ function flip(c: Card){
     if(isMatch(a,b)){
       matched.value.add(a.uid); matched.value.add(b.uid)
       if(matched.value.size===cards.value.length){
-        fireConfetti(); playSfx('correct'); teamStore.addScore(teamStore.activeId, 20 - Math.min(10, moves.value))
+        let base=20 - Math.min(10, moves.value); if(power.consumeDouble()) base*=2; teamStore.addScoreWithStreak(teamStore.activeId, base, 0); toastXp.value=base; showToast.value=false; setTimeout(()=>showToast.value=true,10); fireConfetti(); playSfx('correct'); if(teamStore.getStreak(teamStore.activeId)>=3) showBonus.value=true
       }
       flipped.value=[]
     } else {
@@ -50,6 +50,9 @@ function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx
 <template>
   <div class="space-y-4">
     <ScoreBoard :teams="teamStore.teams" :activeId="teamStore.activeId" :streaks="teamStore.streaks" />
+    <PowerUpsBar :doubleUsed="power.doubleUsed.value" :freezeUsed="power.freezeUsed.value" :fiftyUsed="power.fiftyUsed.value" :canFifty="false" @double="power.useDouble()" @freeze="doFreeze" @fifty="()=>{}" />
+    <XpToast :xp="toastXp" :show="showToast" />
+    <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <div class="flex justify-between font-black text-sm">
       <span>Moves: {{ moves }}</span><span>Matched: {{ matched.size/2 }} / {{ cards.length/2 }}</span>
     </div>

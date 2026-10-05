@@ -36,7 +36,7 @@ start()
 function submit(){
   revealed.value=true; timer.stop()
   ok.value=checkAnswer(cur.value.word, input.value)
-  if(ok.value){ const base=xpFor(true, timer.remaining.value, timer.total.value, 10); teamStore.addScoreWithStreak(teamStore.activeId, base, streakBonus(teamStore.getStreak(teamStore.activeId))) } else teamStore.resetStreak(teamStore.activeId)
+  if(ok.value){ let base=xpFor(true, timer.remaining.value, timer.total.value, 10); if(power.consumeDouble()) base*=2; const sb=streakBonus(teamStore.getStreak(teamStore.activeId)); teamStore.addScoreWithStreak(teamStore.activeId, base, sb); toastXp.value=base+sb; showToast.value=false; setTimeout(()=> showToast.value=true, 10); fireConfetti(); playSfx('correct'); if(teamStore.getStreak(teamStore.activeId)>=3) showBonus.value=true } else { teamStore.resetStreak(teamStore.activeId); playSfx('wrong') }
 }
 function next(){ idx.value=pickRandomIndexExcluding(list.value.length, idx.value); teamStore.nextTurn(); start() }
 
@@ -46,6 +46,9 @@ function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx
 <template>
   <div class="space-y-4">
     <ScoreBoard :teams="teamStore.teams" :activeId="teamStore.activeId" :streaks="teamStore.streaks" />
+    <PowerUpsBar :doubleUsed="power.doubleUsed.value" :freezeUsed="power.freezeUsed.value" :fiftyUsed="power.fiftyUsed.value" :canFifty="false" @double="power.useDouble()" @freeze="doFreeze" @fifty="()=>{}" />
+    <XpToast :xp="toastXp" :show="showToast" />
+    <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <div class="flex justify-between font-black text-sm"><span>Unscramble · {{ idx+1 }}/{{ list.length }} · {{ cur.hint }}</span><span :class="timer.remaining.value<=5?'text-duo-red animate-pulse':''">{{ timer.remaining.value }}s</span></div>
     <ProgressBar :value="timer.remaining.value" :max="timer.total.value" color="#58CC02" />
     <DuoCard class="text-center py-8">

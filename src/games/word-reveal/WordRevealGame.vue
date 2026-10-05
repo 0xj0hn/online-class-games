@@ -28,7 +28,7 @@ const blur = computed(()=> [24,16,8,2,0][stage.value])
 function reveal(){ stage.value=nextStage(stage.value) }
 function next(){ idx.value=pickRandomIndexExcluding(items.value.length, idx.value); stage.value=0 }
 function correct(){
-  teamStore.addScore(teamStore.activeId, xpForStage(stage.value))
+  let xp=xpForStage(stage.value); if(power.consumeDouble()) xp*=2; teamStore.addScoreWithStreak(teamStore.activeId, xp, 0); toastXp.value=xp; showToast.value=false; setTimeout(()=>showToast.value=true,10); fireConfetti(); playSfx('correct'); if(teamStore.getStreak(teamStore.activeId)>=3) showBonus.value=true
   teamStore.nextTurn()
   next()
 }
@@ -38,6 +38,9 @@ function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx
 <template>
   <div class="space-y-4">
     <ScoreBoard :teams="teamStore.teams" :activeId="teamStore.activeId" :streaks="teamStore.streaks" />
+    <PowerUpsBar :doubleUsed="power.doubleUsed.value" :freezeUsed="power.freezeUsed.value" :fiftyUsed="power.fiftyUsed.value" :canFifty="false" @double="power.useDouble()" @freeze="doFreeze" @fifty="()=>{}" />
+    <XpToast :xp="toastXp" :show="showToast" />
+    <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <DuoCard class="text-center">
       <div class="relative overflow-hidden rounded-2xl border-2 border-duo-gray bg-duo-gray-light">
         <img :src="cur.image" :alt="cur.word" class="w-full h-72 object-cover transition-all duration-500" :style="{ filter: `blur(${blur}px)` }" data-testid="reveal-img" />

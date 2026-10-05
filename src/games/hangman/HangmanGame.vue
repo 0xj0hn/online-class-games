@@ -31,13 +31,16 @@ const lost = computed(()=> isLost(state.value))
 function next(){ idx.value=pickRandomIndexExcluding(items.value.length, idx.value); init() }
 // award on win
 import { watch } from 'vue'
-watch(won, v=>{ if(v) teamStore.addScore(teamStore.activeId, 15)})
+watch(won, v=>{ if(v){ let base=15; if(power.consumeDouble()) base*=2; teamStore.addScoreWithStreak(teamStore.activeId, base, 0); toastXp.value=base; showToast.value=false; setTimeout(()=>showToast.value=true,10); fireConfetti(); playSfx('correct'); if(teamStore.getStreak(teamStore.activeId)>=3) showBonus.value=true }})
 function doFreeze(){}
 function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx('bonus'); showBonus.value=false; teamStore.resetStreak(teamStore.activeId) }
 </script>
 <template>
   <div class="space-y-4">
     <ScoreBoard :teams="teamStore.teams" :activeId="teamStore.activeId" :streaks="teamStore.streaks" />
+    <PowerUpsBar :doubleUsed="power.doubleUsed.value" :freezeUsed="power.freezeUsed.value" :fiftyUsed="power.fiftyUsed.value" :canFifty="false" @double="power.useDouble()" @freeze="doFreeze" @fifty="()=>{}" />
+    <XpToast :xp="toastXp" :show="showToast" />
+    <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <DuoCard class="text-center">
       <p class="text-xs font-black tracking-widest uppercase text-duo-text-light">{{ items[idx].hint }}</p>
       <p class="text-3xl font-black tracking-widest text-duo-text mt-3" data-testid="display-word">{{ displayWord(state) }}</p>
