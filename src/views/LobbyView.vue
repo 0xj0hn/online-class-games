@@ -5,6 +5,7 @@ import TeamSelector from '@/components/shared/TeamSelector.vue'
 import Podium from '@/components/shared/Podium.vue'
 import { useTeamStore } from '@/stores/teamStore'
 import { ref } from 'vue'
+import { PRACTICE_LIST } from '@/practice/config'
 const teamStore = useTeamStore()
 const showPodium = ref(false)
 
@@ -57,6 +58,20 @@ const games = [
 
     <div class="bg-duo-blue text-white rounded-2xl p-4 font-bold text-sm flex gap-3 items-center">
       <span class="text-xl">💡</span> Tip: In BigBlueButton, click Share Screen → Share your browser tab. Students shout answers, you click Reveal / Correct.
+    </div>
+
+    <div class="bg-white rounded-2xl border-2 border-duo-gray p-5">
+      <h2 class="text-xl font-black text-duo-text">🎧 Online Practice</h2>
+      <p class="text-sm font-bold text-duo-text-light mt-1">Students open the link on their own phone or laptop and drill solo — no teams, no projector, as many rounds as they want. Scores go on a shared class leaderboard.</p>
+      <div class="grid sm:grid-cols-2 gap-3 mt-4">
+        <router-link v-for="p in PRACTICE_LIST" :key="p.id" :to="`/practice/${p.id}`">
+          <DuoCard clickable class="h-full hover:-translate-y-1 transition-transform">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-3" :style="{background:'#1CB0F620', border:'2px solid #1CB0F6'}">{{ p.icon }}</div>
+            <h3 class="font-black text-duo-text">{{ p.title }} Practice</h3>
+            <p class="text-sm font-bold text-duo-text-light">{{ p.seconds }}s per question · {{ p.baseXp }} XP each</p>
+          </DuoCard>
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
