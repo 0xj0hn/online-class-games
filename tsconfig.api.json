@@ -4,34 +4,23 @@
     "ignoreDeprecations": "6.0",
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.api.tsbuildinfo",
     "target": "es2023",
-    "lib": [
-      "ES2023"
-    ],
-    "types": [
-      "node",
-      "vite/client"
-    ],
+    "lib": ["ES2023"],
+    "types": ["node", "vite/client"],
     "skipLibCheck": true,
     "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
+    "paths": { "@/*": ["./src/*"] },
+
     "module": "esnext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
+
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": [
-    "api/**/*.ts",
-    "src/practice/config.ts",
-    "src/services/leaderboard.ts"
-  ]
+  "include": ["api/**/*.ts", "server/**/*.ts", "src/practice/config.ts", "src/services/leaderboard.ts"]
 }

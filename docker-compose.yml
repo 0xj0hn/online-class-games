@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        # "/" = same origin. The app and the API are one process, so no CORS and
+        # no external URL is needed. Change only if you split them up.
+        VITE_API_URL: ${VITE_API_URL:-/}
+    environment:
+      TURSO_DATABASE_URL: file:/data/leaderboard.db
+      ALLOWED_ORIGINS: ${DOMAIN:-*}
+      PORT: "3000"
+      DIST_DIR: /app/dist
+    volumes:
+      - leaderboard-data:/data
+    restart: unless-stopped
+    expose:
+      - "3000"
+
+  # Automatic HTTPS: Caddy gets a Let's Encrypt certificate for $DOMAIN and
+  # renews it itself. Point your DNS A record at this server first.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env to your hostname}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  leaderboard-data:
+  caddy-data:
+  caddy-config:
