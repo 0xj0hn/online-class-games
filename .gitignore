@@ -23,5 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# generated server bundle
+# Local secrets — never commit
+.env
+.env.local
+.env.*.local
+
+# server bundle
 server/index.mjs
