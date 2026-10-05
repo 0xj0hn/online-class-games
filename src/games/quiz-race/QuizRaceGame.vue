@@ -9,6 +9,7 @@ import { pickRandomIndexExcluding } from '@/utils/random'
 import DuoCard from '@/components/ui/DuoCard.vue'
 import ScoreBoard from '@/components/shared/ScoreBoard.vue'
 import ProgressBar from '@/components/shared/ProgressBar.vue'
+import TimerToggle from '@/components/shared/TimerToggle.vue'
 import PowerUpsBar from '@/components/shared/PowerUpsBar.vue'
 import XpToast from '@/components/shared/XpToast.vue'
 import BonusSpin from '@/components/shared/BonusSpin.vue'
@@ -67,7 +68,10 @@ startQ()
     <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <div class="flex justify-between items-center">
       <span class="font-black text-sm text-duo-text-light">Q {{ idx+1 }} / {{ quiz.length }} · {{ cur.category }}</span>
-      <span class="font-black text-duo-red text-sm">{{ timer.remaining.value }}s</span>
+      <span class="flex items-center gap-2">
+        <span class="font-black text-duo-red text-sm">{{ timer.remaining.value }}s</span>
+        <TimerToggle :running="timer.running.value" @toggle="timer.toggle" />
+      </span>
     </div>
     <ProgressBar :value="timer.remaining.value" :max="timer.total.value" color="#FF4B4B" />
     <DuoCard>

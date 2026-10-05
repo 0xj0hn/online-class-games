@@ -15,6 +15,7 @@ import XpToast from '@/components/shared/XpToast.vue'
 import BonusSpin from '@/components/shared/BonusSpin.vue'
 import ScoreBoard from '@/components/shared/ScoreBoard.vue'
 import ProgressBar from '@/components/shared/ProgressBar.vue'
+import TimerToggle from '@/components/shared/TimerToggle.vue'
 
 const packStore = usePackStore()
 const teamStore = useTeamStore()
@@ -54,7 +55,7 @@ function onBonus(xp:number){ teamStore.addScore(teamStore.activeId, xp); playSfx
     <PowerUpsBar :doubleUsed="power.doubleUsed.value" :freezeUsed="power.freezeUsed.value" :fiftyUsed="power.fiftyUsed.value" :canFifty="false" @double="power.useDouble()" @freeze="doFreeze" @fifty="()=>{}" />
     <XpToast :xp="toastXp" :show="showToast" />
     <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
-    <div class="flex justify-between font-black text-sm"><span>Pictionary · {{ cur.category }} · {{ idx+1 }}/{{ list.length }}</span><span>{{ timer.remaining.value }}s</span></div>
+    <div class="flex justify-between font-black text-sm items-center"><span>Pictionary · {{ cur.category }} · {{ idx+1 }}/{{ list.length }}</span><span class="flex items-center gap-2"><span>{{ timer.remaining.value }}s</span><TimerToggle :running="timer.running.value" @toggle="timer.toggle" /></span></div>
     <ProgressBar :value="timer.remaining.value" :max="timer.total.value" color="#FFC800" />
     <div class="grid md:grid-cols-3 gap-4">
       <div class="md:col-span-2">

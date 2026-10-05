@@ -16,6 +16,7 @@ import { pickRandomIndexExcluding } from '@/utils/random'
 import DuoCard from '@/components/ui/DuoCard.vue'
 import ScoreBoard from '@/components/shared/ScoreBoard.vue'
 import ProgressBar from '@/components/shared/ProgressBar.vue'
+import TimerToggle from '@/components/shared/TimerToggle.vue'
 
 const packStore = usePackStore()
 const teamStore = useTeamStore()
@@ -58,7 +59,10 @@ function doFreeze(){ if(power.useFreeze()){ timer.stop(); setTimeout(()=> timer.
     <BonusSpin v-if="showBonus" @award="onBonus" @close="showBonus=false" />
     <div class="flex justify-between font-black text-sm">
       <span class="text-duo-text-light">{{ cur.category }} · {{ idx+1 }}/{{ list.length }}</span>
-      <span :class="timer.remaining.value<=5 ? 'text-duo-red animate-pulse' : 'text-duo-text-light'">{{ timer.remaining.value }}s</span>
+      <span class="flex items-center gap-2">
+        <span :class="timer.remaining.value<=5 ? 'text-duo-red animate-pulse' : 'text-duo-text-light'">{{ timer.remaining.value }}s</span>
+        <TimerToggle :running="timer.running.value" @toggle="timer.toggle" />
+      </span>
     </div>
     <ProgressBar :value="timer.remaining.value" :max="timer.total.value" :color="timer.remaining.value>10 ? '#58CC02' : timer.remaining.value>5 ? '#FFC800' : '#FF4B4B'" />
     <DuoCard>
