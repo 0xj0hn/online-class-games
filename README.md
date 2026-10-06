@@ -59,6 +59,7 @@ Edit `.env`:
 ```
 DOMAIN=games.example.com      # used by Caddy for the TLS certificate
 VITE_API_URL=/                # same origin — one process, no CORS
+ADMIN_KEY=$(openssl rand -base64 24)   # required to save packs in /admin
 ```
 Leave `TURSO_DATABASE_URL` alone: the Compose file sets it to `file:/data/leaderboard.db`.
 
@@ -157,7 +158,16 @@ CDN/edge for a public deployment.
 Keep the XP formula in `config.ts` pure — the API imports the same file so client and server always agree.
 
 ## Admin
-`/admin` — edit packs (topics/quiz/pairs/sentences/hangman/reveal) stored in localStorage, export/import JSON.
+`/admin` — edit packs (topics/quiz/pairs/sentences/hangman/reveal) stored in the **server
+database**, so every student's device gets the same questions. Export/Import JSON pulls from
+and replaces the server copy.
+
+- The server is the source of truth; `localStorage` keeps a copy so the app still works offline.
+- Saving requires the admin key. Set `ADMIN_KEY` on the server, then type it once in `/admin`
+  (remembered in the browser). With no `ADMIN_KEY` set, saving is refused and the page says so.
+- Reads are public — students need the packs to play. Only writes are protected.
+- Packs saved before this change (in the old `bbb_packs_v1` localStorage key) are **not**
+  migrated. Re-import your JSON once in `/admin`.
 
 ## Design
 - Palette `#58CC02` etc., Nunito 800/900, `rounded-2xl border-b-4` pressed effect, max-w-5xl centered for projection.

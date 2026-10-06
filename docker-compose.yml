@@ -9,6 +9,8 @@ services:
     environment:
       TURSO_DATABASE_URL: file:/data/leaderboard.db
       ALLOWED_ORIGINS: ${DOMAIN:-*}
+      # Empty means pack saving is disabled (admin page will say so).
+      ADMIN_KEY: ${ADMIN_KEY:-}
       PORT: "3000"
       DIST_DIR: /app/dist
     volumes:
