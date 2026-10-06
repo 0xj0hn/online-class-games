@@ -15,6 +15,7 @@ writeFileSync(join(dist, 'secret.txt'), 'nope')
 
 process.env.TURSO_DATABASE_URL = `file:${join(dir, 'db.sqlite')}`
 process.env.ALLOWED_ORIGINS = '*'
+process.env.ADMIN_KEY = 'letmein'
 
 const { createRequestListener } = await import('./app')
 let server: Server
@@ -130,5 +131,72 @@ describe('self-hosted server', ()=>{
       method:'POST', headers:{ 'content-type':'application/json' }, body:'{not json',
     })
     expect(res.status).toBe(400)
+  })
+})
+
+describe('packs over http', ()=>{
+  const key = { 'x-admin-key':'letmein' }
+
+  it('starts empty', async ()=>{
+    const res = await fetch(`${base}/api/packs`)
+    expect(res.status).toBe(200)
+    expect((await res.json() as any).packs).toEqual({})
+  })
+
+  it('saves with the admin key and reads back', async ()=>{
+    const packs = { quiz:[{ id:'q1', question:'She ___ to school', options:['go','goes'] }] }
+    const put = await fetch(`${base}/api/packs`, {
+      method:'PUT', headers:{ 'content-type':'application/json', ...key },
+      body: JSON.stringify({ packs }),
+    })
+    expect(put.status).toBe(200)
+    expect((await put.json() as any).ok).toBe(true)
+
+    const got = await fetch(`${base}/api/packs`)
+    const body = await got.json() as any
+    expect(body.packs).toEqual(packs)
+    expect(body.updatedAt).toBeTruthy()
+  })
+
+  it('lets any reader fetch packs without a key', async ()=>{
+    const res = await fetch(`${base}/api/packs`)
+    expect(res.status).toBe(200)
+  })
+
+  it('refuses a write with the wrong key', async ()=>{
+    const res = await fetch(`${base}/api/packs`, {
+      method:'PUT', headers:{ 'content-type':'application/json', 'x-admin-key':'nope' },
+      body: JSON.stringify({ packs:{ quiz:[] } }),
+    })
+    expect(res.status).toBe(401)
+    const before = await (await fetch(`${base}/api/packs`)).json() as any
+    expect(before.packs.quiz).toHaveLength(1)
+  })
+
+  it('rejects an unknown pack type', async ()=>{
+    const res = await fetch(`${base}/api/packs`, {
+      method:'PUT', headers:{ 'content-type':'application/json', ...key },
+      body: JSON.stringify({ packs:{ hack:[] } }),
+    })
+    expect(res.status).toBe(400)
+    expect((await res.json() as any).reason).toBe('bad-pack-type')
+  })
+
+  it('accepts a body larger than the leaderboard limit', async ()=>{
+    const big = { quiz: Array.from({ length:2000 }, (_,i)=> ({ id:`q${i}`, question:'x'.repeat(60) })) }
+    const res = await fetch(`${base}/api/packs`, {
+      method:'PUT', headers:{ 'content-type':'application/json', ...key },
+      body: JSON.stringify({ packs: big }),
+    })
+    expect(res.status).toBe(200)
+    expect((await res.json() as any).items).toBe(2000)
+  })
+
+  it('still enforces the leaderboard body limit', async ()=>{
+    const res = await fetch(`${base}/api/leaderboard`, {
+      method:'POST', headers:{ 'content-type':'application/json' },
+      body: JSON.stringify({ game:'quiz-race', name:'Bob', correct:1, total:6, pad:'x'.repeat(20000) }),
+    })
+    expect(res.status).toBe(413)
   })
 })

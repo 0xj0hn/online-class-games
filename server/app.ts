@@ -2,7 +2,11 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
 import { extname, join, resolve, sep } from 'node:path'
 import leaderboard from '../api/leaderboard'
+import packs from '../api/packs'
 import { db } from '../api/lib/db'
+import { MAX_PACK_BYTES } from '../api/lib/packs'
+
+type ApiHandler = (req: any, res: any) => Promise<unknown> | unknown
 
 export interface AppOptions {
   distDir: string
@@ -96,6 +100,11 @@ export function createRequestListener(options: AppOptions) {
   const distDir = resolve(options.distDir)
   const maxBodyBytes = options.maxBodyBytes ?? 16 * 1024
 
+  const handlers: Record<string, { handler: ApiHandler; maxBody?: number }> = {
+    '/api/leaderboard': { handler: leaderboard },
+    '/api/packs': { handler: packs, maxBody: MAX_PACK_BYTES + 4096 },
+  }
+
   return async function onRequest(req: IncomingMessage, res: ServerResponse) {
     const path = (req.url ?? '/').split('?')[0]
 
@@ -109,14 +118,18 @@ export function createRequestListener(options: AppOptions) {
     }
 
     if(path.startsWith(API_PREFIX)) {
-      if(path.replace(/\/+$/, '') !== '/api/leaderboard') return json(res, 404, { reason:'not-found' })
+      const route = handlers[path.replace(/\/+$/, '')]
+      if(!route) return json(res, 404, { reason:'not-found' })
       try {
-        const parsedBody = req.method === 'POST' ? await readBody(req, maxBodyBytes) : { ok:true as const, value:undefined }
+        const wantsBody = req.method !== 'GET' && req.method !== 'HEAD'
+        const parsedBody = wantsBody
+          ? await readBody(req, route.maxBody ?? maxBodyBytes)
+          : { ok:true as const, value:undefined }
         if(!parsedBody.ok) return json(res, 413, { reason:'body-too-large' })
         const url = new URL(req.url ?? '/', 'http://localhost')
         const query: Record<string, string> = {}
         url.searchParams.forEach((v, k)=> { query[k] = v })
-        return void await leaderboard(
+        return void await route.handler(
           { method:req.method, query, headers:req.headers as Record<string, unknown>, body:parsedBody.value },
           toApiRes(res),
         )
