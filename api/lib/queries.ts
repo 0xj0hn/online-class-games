@@ -29,3 +29,20 @@ SELECT name, xp, correct, total FROM scores
 WHERE game = ?
 ORDER BY xp DESC, updated_at ASC
 LIMIT ?`
+
+export const CREATE_PACKS = `
+CREATE TABLE IF NOT EXISTS packs (
+  id         INTEGER PRIMARY KEY CHECK (id = 1),
+  data       TEXT    NOT NULL,
+  updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+)`
+
+export const SELECT_PACKS = `SELECT data, updated_at FROM packs WHERE id = 1`
+
+export const UPSERT_PACKS = `
+INSERT INTO packs (id, data, updated_at)
+VALUES (1, ?, datetime('now'))
+ON CONFLICT(id) DO UPDATE SET
+  data = excluded.data,
+  updated_at = excluded.updated_at
+RETURNING updated_at`

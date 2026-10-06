@@ -22,5 +22,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["api/**/*.ts", "server/**/*.ts", "src/practice/config.ts", "src/services/leaderboard.ts"]
+  "include": ["api/**/*.ts", "server/**/*.ts", "src/practice/config.ts", "src/services/leaderboard.ts", "src/data/packTypes.ts"]
 }
