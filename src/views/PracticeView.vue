@@ -84,10 +84,22 @@ watch(()=> round.finished.value, done=>{ if(done) timer.stop() })
 watch(()=> timer.remaining.value, (n, prev)=>{
   if(n<=0 && prev>0 && !round.finished.value) gameRef.value?.timeUp?.()
 })
-watch(()=> id.value, ()=>{ if(valid.value) startRound() })
-watch(()=> packStore.overrides, ()=>{ if(valid.value) startRound() })
+function whenPacksReady(cb: () => void) {
+  if(packStore.ready) return void cb()
+  const stop = watch(()=> packStore.ready, ok=>{
+    if(!ok) return
+    stop()
+    cb()
+  })
+}
 
-onMounted(()=>{ if(valid.value) startRound(); loadBoard() })
+watch(()=> id.value, ()=>{ if(valid.value) whenPacksReady(startRound) })
+watch(()=> packStore.overrides, ()=>{ if(valid.value && packStore.ready) startRound() })
+
+onMounted(()=>{
+  if(valid.value) whenPacksReady(startRound)
+  loadBoard()
+})
 </script>
 <template>
   <div>

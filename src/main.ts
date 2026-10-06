@@ -3,5 +3,12 @@ import { createPinia } from 'pinia'
 import './style.css'
 import App from './App.vue'
 import router from './router'
+import { usePackStore } from './stores/packStore'
 
-createApp(App).use(createPinia()).use(router).mount('#app')
+const app = createApp(App)
+app.use(createPinia())
+app.use(router)
+
+void usePackStore().load()
+
+app.mount('#app')

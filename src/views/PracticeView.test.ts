@@ -5,6 +5,8 @@ import PracticeView from '@/views/PracticeView.vue'
 import * as api from '@/services/leaderboard'
 import { quizSeed } from '@/data/seed'
 import QuizRacePractice from '@/practice/QuizRacePractice.vue'
+import { usePackStore } from '@/stores/packStore'
+import * as packsApi from '@/services/packs'
 
 const route = { params: { id:'quiz-race' } }
 vi.mock('vue-router', ()=> ({ useRoute: ()=> route }))
@@ -19,6 +21,8 @@ const ROUND = 6
 
 async function mountView() {
   const w = mount(PracticeView, { global: { plugins:[createPinia()], stubs:{ RouterLink:true } } })
+  await flushPromises()
+  await usePackStore().load()
   await flushPromises()
   return w
 }
@@ -47,6 +51,8 @@ describe('PracticeView', ()=>{
     localStorage.setItem('bbb.practice.student','Ana')
     vi.spyOn(api,'fetchLeaderboard').mockResolvedValue([])
     vi.spyOn(api,'submitScore').mockResolvedValue({ ok:true, personalBest:45 })
+    vi.spyOn(packsApi,'fetchPacks').mockResolvedValue({ ok:false, reason:'offline' })
+    vi.spyOn(packsApi,'savePacks').mockResolvedValue({ ok:true, updatedAt:'now', items:0 })
   })
   afterEach(()=> vi.restoreAllMocks())
 
@@ -146,6 +152,7 @@ describe('PracticeView', ()=>{
   it('fails the question when the timer runs out', async ()=>{
     vi.useFakeTimers()
     const w = mount(PracticeView, { global: { plugins:[createPinia()], stubs:{ RouterLink:true } } })
+    await usePackStore().load()
     await vi.advanceTimersByTimeAsync(0)
     expect(w.get('[data-testid="practice-timer"]').text()).toContain('15s')
     await vi.advanceTimersByTimeAsync(16_000)
@@ -157,6 +164,9 @@ describe('PracticeView', ()=>{
   it('gives the next question a fresh timer after an answer', async ()=>{
     vi.useFakeTimers()
     const w = mount(PracticeView, { global: { plugins:[createPinia()], stubs:{ RouterLink:true } } })
+    await usePackStore().load()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(w.get('[data-testid="practice-timer"]').text()).toContain('15s')
     await vi.advanceTimersByTimeAsync(5_000)
     expect(w.get('[data-testid="practice-timer"]').text()).toContain('10s')
     await answerQ(w, quizSeed[0].answerIndex, true)
@@ -167,6 +177,7 @@ describe('PracticeView', ()=>{
   it('does not restart the timer while manually paused', async ()=>{
     vi.useFakeTimers()
     const w = mount(PracticeView, { global: { plugins:[createPinia()], stubs:{ RouterLink:true } } })
+    await usePackStore().load()
     await vi.advanceTimersByTimeAsync(0)
     await w.get('[data-testid="timer-toggle"]').trigger('click')
     await answerQ(w, quizSeed[0].answerIndex, true)
